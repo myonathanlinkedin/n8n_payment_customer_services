@@ -1,5 +1,5 @@
 {
-  "name": "My workflow",
+  "name": "Advance Payment CS Support",
   "nodes": [
     {
       "parameters": {
@@ -7,13 +7,13 @@
         "path": "customer-message",
         "options": {}
       },
-      "id": "be9f31ad-cc55-4218-b27f-344438966836",
+      "id": "dcf0c4c6-213e-4a64-8e97-cc9a95227dfb",
       "name": "Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        -140,
-        -40
+        2300,
+        -60
       ],
       "webhookId": "customer-message-webhook"
     },
@@ -21,13 +21,13 @@
       "parameters": {
         "options": {}
       },
-      "id": "559315a5-355c-4178-9fba-a351a144fdff",
+      "id": "f48ddb7c-d221-49ae-8a15-4f9972555bfb",
       "name": "IMAP Email",
       "type": "n8n-nodes-base.emailReadImap",
       "typeVersion": 1,
       "position": [
-        -140,
-        -240
+        2380,
+        -280
       ]
     },
     {
@@ -37,13 +37,13 @@
         ],
         "additionalFields": {}
       },
-      "id": "be0283f2-c8b0-4b81-b0ec-7aa929e8e216",
+      "id": "0531621e-130d-4924-a554-1866fe328201",
       "name": "Telegram Trigger",
       "type": "n8n-nodes-base.telegramTrigger",
       "typeVersion": 1,
       "position": [
-        -140,
-        160
+        2320,
+        180
       ],
       "webhookId": "a75d5ed5-2c9e-421f-b122-675e4fd9f5e7"
     },
@@ -51,13 +51,13 @@
       "parameters": {
         "jsCode": "// Determine the source and extract the message content\nlet source = '';\nlet message = '';\nlet userId = '';\nlet userEmail = '';\nlet platform = '';\nlet timestamp = new Date().toISOString();\n\n// Check which node triggered the workflow\nif (Object.keys($input.first()).includes('headers')) {\n  // From webhook\n  source = 'webhook';\n  const body = $input.first().body;\n  message = body.message || '';\n  userId = body.userId || body.user_id || '';\n  userEmail = body.email || '';\n  platform = body.platform || body.os || '';\n} else if ($input.first().subject) {\n  // From email\n  source = 'email';\n  message = $input.first().text || $input.first().html || '';\n  userId = $input.first().from || '';\n  userEmail = $input.first().from || '';\n  timestamp = $input.first().date || timestamp;\n} else if ($input.first().message) {\n  // From Telegram\n  source = 'telegram';\n  message = $input.first().message.text || '';\n  userId = $input.first().message.from.id || '';\n  userEmail = '';\n} else if ($input.first().body) {\n  // From WhatsApp\n  source = 'whatsapp';\n  message = $input.first().body || '';\n  userId = $input.first().from || '';\n  userEmail = '';\n}\n\n// Create a standardized object\nreturn [\n  {\n    source,\n    message,\n    userId,\n    userEmail,\n    platform,\n    timestamp,\n    rawData: $input.first()\n  }\n];"
       },
-      "id": "3ee282f5-dbda-4ba7-8b55-13e6794de99e",
+      "id": "d0d646b6-5980-428d-aec3-dd9a2995ed18",
       "name": "Normalize Data",
       "type": "n8n-nodes-base.code",
       "typeVersion": 1,
       "position": [
-        80,
-        -40
+        2760,
+        -260
       ]
     },
     {
@@ -66,26 +66,26 @@
         "url": "https://api.openai.com/v1/chat/completions",
         "options": {}
       },
-      "id": "33eb078b-1180-49fe-954e-3f76ba547c87",
+      "id": "39f7519f-255b-419a-bb2c-ba8f13386cf8",
       "name": "Analyze with OpenAI",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 1,
       "position": [
-        1400,
-        -40
+        3700,
+        -340
       ]
     },
     {
       "parameters": {
         "jsCode": "// Parse the OpenAI response\nconst aiResponse = $input.first().body;\nconst responseData = JSON.parse(aiResponse.choices[0].message.content);\n\n// Get the original data\nconst originalData = $input.first();\n\n// Combine everything\nconst result = {\n  ...originalData,\n  analysis: responseData,\n  slaDeadline: calculateSlaDeadline(responseData.severity)\n};\n\n// Helper function to calculate SLA deadline (3 working days)\nfunction calculateSlaDeadline(severity) {\n  const baseDate = new Date();\n  let daysToAdd = 3;\n  \n  // Adjust based on severity\n  if (severity >= 4) {\n    daysToAdd = 1; // High severity = faster response\n  } else if (severity <= 2) {\n    daysToAdd = 5; // Low severity = longer response time\n  }\n  \n  let resultDate = new Date(baseDate);\n  let addedDays = 0;\n  \n  while (addedDays < daysToAdd) {\n    resultDate.setDate(resultDate.getDate() + 1);\n    \n    // Skip weekends (0 = Sunday, 6 = Saturday)\n    if (resultDate.getDay() !== 0 && resultDate.getDay() !== 6) {\n      addedDays++;\n    }\n  }\n  \n  return resultDate.toISOString();\n}\n\nreturn [result];"
       },
-      "id": "f7e73849-932a-4859-8b65-5584d847d07f",
+      "id": "1eaeb6fe-1833-4b00-8efc-dafb8545dfae",
       "name": "Process Analysis",
       "type": "n8n-nodes-base.code",
       "typeVersion": 1,
       "position": [
-        1620,
-        -40
+        3920,
+        -340
       ]
     },
     {
@@ -107,13 +107,13 @@
           ]
         }
       },
-      "id": "f782731e-548c-4b1f-a0f6-f20b6553fc4f",
+      "id": "aeac45bf-52ee-4374-b082-0af71eda446f",
       "name": "Critical Bug?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        1620,
-        410
+        3920,
+        100
       ]
     },
     {
@@ -128,13 +128,13 @@
           ]
         }
       },
-      "id": "ef5253a9-75af-499e-a0c5-02aad20ebf95",
+      "id": "fc0a2d56-10ee-4440-a4d3-8e4c6fe2a446",
       "name": "Payment Issue?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        1620,
-        710
+        3920,
+        400
       ]
     },
     {
@@ -144,13 +144,13 @@
         "otherOptions": {},
         "attachments": []
       },
-      "id": "a190a4fc-b6ae-4f68-b946-b2b0cf1e7996",
+      "id": "42936974-2489-4f1e-9fe1-149c2ac4094e",
       "name": "Send Slack Alert",
       "type": "n8n-nodes-base.slack",
       "typeVersion": 1,
       "position": [
-        1840,
-        485
+        4140,
+        180
       ]
     },
     {
@@ -158,13 +158,13 @@
         "url": "https://api.xendit.co/v2/payment_status",
         "options": {}
       },
-      "id": "a22d6ff0-7444-4d4e-aafb-5e796fb17640",
+      "id": "fc5bae80-c63a-4647-bb76-25a4d15004b5",
       "name": "Check Payment Status",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 1,
       "position": [
-        1840,
-        785
+        4140,
+        480
       ]
     },
     {
@@ -173,37 +173,37 @@
         "url": "https://api.openai.com/v1/chat/completions",
         "options": {}
       },
-      "id": "14efa192-0cdd-4ef0-8e16-e9b1942be061",
+      "id": "376f7886-5bb3-4836-91a2-601a445a4eb0",
       "name": "Generate Response",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 1,
       "position": [
-        2060,
-        -40
+        4360,
+        -340
       ]
     },
     {
       "parameters": {
         "jsCode": "// Get response text from OpenAI\nconst responseText = JSON.parse($input.first().body.choices[0].message.content);\n\n// Get all the analysis data\nconst analysisData = $input.first();\n\n// Determine which channel to respond to\nconst source = analysisData.source;\nlet responseOperation = {};\n\nswitch(source) {\n  case 'email':\n    responseOperation = {\n      type: 'email',\n      to: analysisData.userEmail,\n      subject: `Re: ${analysisData.rawData.subject || 'Your Support Request'}`,\n      body: responseText\n    };\n    break;\n  case 'telegram':\n    responseOperation = {\n      type: 'telegram',\n      chatId: analysisData.userId,\n      message: responseText\n    };\n    break;\n  case 'whatsapp':\n    responseOperation = {\n      type: 'whatsapp',\n      to: analysisData.userId,\n      message: responseText\n    };\n    break;\n  case 'webhook':\n  default:\n    responseOperation = {\n      type: 'api_response',\n      message: responseText\n    };\n    break;\n}\n\n// Return both the analysis data and the response operation\nreturn [{\n  ...analysisData,\n  responseText,\n  responseOperation\n}];"
       },
-      "id": "d4c1727b-2d2e-4b28-9a0b-fadbd7d2b7cb",
+      "id": "54601249-9f3d-4647-80ba-dbc1ea183886",
       "name": "Format Response",
       "type": "n8n-nodes-base.code",
       "typeVersion": 1,
       "position": [
-        2280,
-        60
+        4420,
+        340
       ]
     },
     {
       "parameters": {},
-      "id": "f712ca96-155f-43ef-9a98-a46acaffbdd6",
+      "id": "85aeb885-0660-426b-a70c-70fdedf18a77",
       "name": "Route Response",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 1,
       "position": [
-        2500,
-        39
+        4300,
+        640
       ]
     },
     {
@@ -212,13 +212,13 @@
         "text": "={{$node[\"Format Response\"].json[\"responseOperation\"][\"body\"]}}",
         "options": {}
       },
-      "id": "78ba1b51-c8ed-43a4-9b9a-87b59c6c7031",
+      "id": "c817f9fa-233c-41da-9c85-2221b861e271",
       "name": "Send Email",
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 1,
       "position": [
-        2720,
-        10
+        4860,
+        280
       ]
     },
     {
@@ -227,25 +227,25 @@
         "text": "={{$node[\"Format Response\"].json[\"responseOperation\"][\"message\"]}}",
         "additionalFields": {}
       },
-      "id": "46b65a6b-6899-4da0-913f-baa9c40b827b",
+      "id": "f9604488-bf43-4575-9e5d-6e82ef45cac3",
       "name": "Send Telegram",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1,
       "position": [
-        2720,
-        435
+        4860,
+        700
       ],
       "webhookId": "d34956f8-f411-4d6d-8614-a1a260876626"
     },
     {
       "parameters": {},
-      "id": "ad8338c2-552b-4359-a543-eb4297a614e6",
+      "id": "743c0982-f118-4837-9ec1-9c542ce60bb3",
       "name": "Send WhatsApp",
       "type": "n8n-nodes-base.whatsApp",
       "typeVersion": 1,
       "position": [
-        2720,
-        635
+        4860,
+        900
       ],
       "webhookId": "2eb12f3e-62e7-4d80-90d3-7044809296b2"
     },
@@ -253,26 +253,26 @@
       "parameters": {
         "options": {}
       },
-      "id": "18dcd84b-cbaa-4fe4-934f-8a0d6796ff83",
+      "id": "302591bb-c0aa-4bd1-a007-1faa599ad380",
       "name": "Respond to Webhook",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        2720,
-        835
+        4860,
+        1100
       ]
     },
     {
       "parameters": {
         "options": {}
       },
-      "id": "1a8ff3b4-4edb-401e-a839-612503e72b38",
+      "id": "8c86822d-aa73-4bd4-9237-094a4dc75d5a",
       "name": "Log to Google Sheets",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 2,
       "position": [
-        2720,
-        235
+        4860,
+        500
       ]
     },
     {
@@ -288,13 +288,13 @@
           "value": ""
         }
       },
-      "id": "20dec335-dc84-46b4-b897-a642a0f614fb",
+      "id": "c5dce2dd-d600-4d27-b230-638a0830b09c",
       "name": "Log to Airtable",
       "type": "n8n-nodes-base.airtable",
       "typeVersion": 1,
       "position": [
-        3600,
-        920.5
+        5340,
+        520
       ]
     },
     {
@@ -305,26 +305,26 @@
           ]
         }
       },
-      "id": "e4c147ae-ac7a-4c0d-bad0-77ad57aeb372",
+      "id": "91054e31-cc6c-4891-9245-30481a259ccb",
       "name": "SLA Monitor Trigger",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1,
       "position": [
-        2720,
-        1035
+        4860,
+        1300
       ]
     },
     {
       "parameters": {
         "options": {}
       },
-      "id": "a2bd96fd-5f0e-4973-a1e6-f1173fe06a05",
+      "id": "4e672a23-368f-4e85-8555-ce0668d73f42",
       "name": "Find Overdue Tickets",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 2,
       "position": [
-        2940,
-        995.5
+        5180,
+        1140
       ]
     },
     {
@@ -334,39 +334,39 @@
         "otherOptions": {},
         "attachments": []
       },
-      "id": "c5b15aed-4009-49e6-80e4-f89dc4169895",
+      "id": "550479fa-8ed2-4cca-84b4-a7bf9d7f1a24",
       "name": "Send SLA Alert",
       "type": "n8n-nodes-base.slack",
       "typeVersion": 1,
       "position": [
-        3160,
-        995.5
+        5400,
+        1140
       ]
     },
     {
       "parameters": {
         "options": {}
       },
-      "id": "ba54a18f-3d46-4cb8-86b0-a27c1a19b774",
+      "id": "9f19e7c7-fc90-4724-82df-1cfccafbde00",
       "name": "Mark as Escalated",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 2,
       "position": [
-        3380,
-        995.5
+        5300,
+        920
       ]
     },
     {
       "parameters": {
         "jsCode": "// Check if message is not in English\nconst message = $input.first().message;\n\n// Simple language detection by checking for non-Latin characters\nconst nonLatinRegex = /[^\\x00-\\x7F]+/;\nconst needsTranslation = nonLatinRegex.test(message);\n\nif (needsTranslation) {\n  return [\n    {\n      ...$input.first(),\n      needsTranslation: true\n    }\n  ];\n} else {\n  return [\n    {\n      ...$input.first(),\n      needsTranslation: false\n    }\n  ];\n}"
       },
-      "id": "58ecbae0-94d7-4b61-af36-8d36e6f8b93e",
+      "id": "0381f5db-77e5-480b-ac53-183069bd1aef",
       "name": "Detect Language",
       "type": "n8n-nodes-base.code",
       "typeVersion": 1,
       "position": [
-        520,
-        -40
+        2740,
+        360
       ]
     },
     {
@@ -380,13 +380,13 @@
           ]
         }
       },
-      "id": "42119b42-0f55-4f08-b451-05cda2236f6e",
+      "id": "382d75ec-7aa4-4728-a84b-c96c9d1e85d6",
       "name": "Needs Translation?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        740,
-        -40
+        3120,
+        -100
       ]
     },
     {
@@ -395,26 +395,26 @@
         "url": "https://translation.googleapis.com/language/translate/v2",
         "options": {}
       },
-      "id": "862428eb-0056-4163-869e-409ef2fac4cc",
+      "id": "a5031d04-6041-47a4-b5d3-41a06b4f0e2a",
       "name": "Translate to English",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 1,
       "position": [
-        960,
-        35
+        3320,
+        100
       ]
     },
     {
       "parameters": {
         "jsCode": "// Process translation response and update the message\nconst translationResponse = $input.first().body.data.translations[0];\nconst originalData = $input.first();\n\n// Store the original message and set the translated one as the main message\nreturn [{\n  ...originalData,\n  originalMessage: originalData.message,\n  message: translationResponse.translatedText,\n  detectedSourceLanguage: translationResponse.detectedSourceLanguage\n}];"
       },
-      "id": "efb86313-5952-41ae-988d-921df6cec2d8",
+      "id": "72a6e993-65ff-44f2-af2d-9e66388db6d9",
       "name": "Process Translation",
       "type": "n8n-nodes-base.code",
       "typeVersion": 1,
       "position": [
-        1180,
-        35
+        3540,
+        100
       ]
     },
     {
@@ -422,26 +422,26 @@
         "url": "={{$node[\"Process Analysis\"].json[\"userEmail\"] ? 'https://api.crm.example.com/customers/' + $node[\"Process Analysis\"].json[\"userEmail\"] : ''}}",
         "options": {}
       },
-      "id": "593c5541-8227-4249-bc2d-134d79793a0c",
+      "id": "a024141d-382e-47ec-b735-220602c87f1f",
       "name": "Fetch CRM Data",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 1,
       "position": [
-        1400,
-        160
+        3700,
+        -140
       ]
     },
     {
       "parameters": {
         "jsCode": "// Check for duplicate issues in the last 24 hours\nconst currentMessage = $input.first().message;\nconst userId = $input.first().userId;\nconst currentTimestamp = new Date($input.first().timestamp);\n\n// Simulate checking recent messages in database\nconst recentMessages = [\n  // This would normally be fetched from a database or API\n  // { userId: 'user123', message: 'App keeps crashing', timestamp: '2023-10-01T10:15:00Z' },\n  // { userId: 'user456', message: 'Payment failed', timestamp: '2023-10-01T11:30:00Z' }\n];\n\n// Find potential duplicates (in real implementation, would use more sophisticated similarity check)\nlet isDuplicate = false;\nlet duplicateId = null;\n\nfor (const msg of recentMessages) {\n  // Check if from same user in last 24 hours\n  const msgTimestamp = new Date(msg.timestamp);\n  const hoursDiff = (currentTimestamp - msgTimestamp) / (1000 * 60 * 60);\n  \n  if (msg.userId === userId && hoursDiff < 24 && msg.message.includes(currentMessage.substring(0, 20))) {\n    isDuplicate = true;\n    duplicateId = msg.id;\n    break;\n  }\n}\n\nreturn [{\n  ...$input.first(),\n  isDuplicate,\n  duplicateId\n}];"
       },
-      "id": "0deb04a3-dbb7-4181-9332-fcb39b6ef36a",
+      "id": "f1ec14d5-0272-4477-8ae8-07f40f5b18f3",
       "name": "Check for Duplicates",
       "type": "n8n-nodes-base.code",
       "typeVersion": 1,
       "position": [
-        1620,
-        160
+        3920,
+        -140
       ]
     },
     {
@@ -455,13 +455,13 @@
           ]
         }
       },
-      "id": "6cebd5c7-c59b-4a7f-82a4-cc185a2a80d4",
+      "id": "91ef115d-210d-4b8f-b94e-a14d688079be",
       "name": "Is Duplicate?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        1840,
-        160
+        4140,
+        -140
       ]
     },
     {
@@ -470,39 +470,39 @@
         "url": "https://api.openai.com/v1/chat/completions",
         "options": {}
       },
-      "id": "995444d0-1cd9-463a-9537-b40511082ba9",
+      "id": "ceb1a657-f42c-40cc-871b-4a09503c25e0",
       "name": "Generate Duplicate Response",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 1,
       "position": [
-        2060,
-        210
+        4360,
+        -100
       ]
     },
     {
       "parameters": {
         "jsCode": "// Check if message was received outside business hours\nconst timestamp = new Date($input.first().timestamp);\nconst hour = timestamp.getUTCHours(); // Using UTC for simplicity\nconst day = timestamp.getUTCDay(); // 0 = Sunday, 6 = Saturday\n\n// Define business hours (9 AM - 5 PM, Monday - Friday in UTC)\nconst isBusinessHours = hour >= 9 && hour < 17 && day >= 1 && day <= 5;\n\nlet messagePrefix = '';\nif (!isBusinessHours) {\n  messagePrefix = 'Thank you for your message outside our business hours. Our team will review this when we return. ';\n}\n\nreturn [{\n  ...$input.first(),\n  isBusinessHours,\n  messagePrefix\n}];"
       },
-      "id": "58ede691-5d6d-49c2-8740-49e8031e7b47",
+      "id": "bf151336-63dc-479d-bd8e-c0aef0a105f8",
       "name": "Check Business Hours",
       "type": "n8n-nodes-base.code",
       "typeVersion": 1,
       "position": [
-        1840,
-        -40
+        4140,
+        -340
       ]
     },
     {
       "parameters": {
         "jsCode": "// Redact sensitive data from message (credit card numbers, passwords, etc.)\nconst message = $input.first().message;\n\n// Patterns for sensitive data\nconst patterns = {\n  creditCard: /\\b(?:\\d[ -]*?){13,16}\\b/g,\n  ssn: /\\b\\d{3}[- ]?\\d{2}[- ]?\\d{4}\\b/g,\n  password: /\\b(?:password|pwd)\\s*[:=]\\s*\\S+/gi,\n  apiKey: /\\b(?:api[_-]?key|token)\\s*[:=]\\s*\\S+/gi\n};\n\n// Redact sensitive information\nlet redactedMessage = message;\n\nfor (const [type, pattern] of Object.entries(patterns)) {\n  redactedMessage = redactedMessage.replace(pattern, `[REDACTED ${type.toUpperCase()}]`);\n}\n\nreturn [{\n  ...$input.first(),\n  originalMessage: message,\n  message: redactedMessage,\n  containedSensitiveData: redactedMessage !== message\n}];"
       },
-      "id": "213cdd3e-bb08-4563-b5e5-ad5b3d138f32",
+      "id": "f99b8269-fd49-4895-ab80-9e6918ea920c",
       "name": "Redact Sensitive Data",
       "type": "n8n-nodes-base.code",
       "typeVersion": 1,
       "position": [
-        300,
-        -40
+        2780,
+        60
       ]
     },
     {
@@ -516,13 +516,13 @@
           ]
         }
       },
-      "id": "a091ef0e-b20d-4651-ba26-ff6b3972bcf0",
+      "id": "53d6c2e5-8b2c-4dd9-95a2-a92d743f2524",
       "name": "Route Response:telegram",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        2500,
-        385
+        4640,
+        660
       ]
     },
     {
@@ -536,13 +536,13 @@
           ]
         }
       },
-      "id": "1e601e52-7444-4ec0-9f1e-0838a55bfeaa",
+      "id": "ac81f231-5bee-4fed-9955-9cd0f13545e6",
       "name": "Route Response:whatsapp",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        2500,
-        585
+        4640,
+        860
       ]
     },
     {
@@ -556,39 +556,39 @@
           ]
         }
       },
-      "id": "317a19fd-34b2-426f-9b4b-85aa0e34370f",
+      "id": "7530e8c9-37fb-4c97-b8f6-888c5db689ff",
       "name": "Route Response:api",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        2500,
-        835
+        4640,
+        1100
       ]
     },
     {
       "parameters": {
         "jsCode": "// Implement fallback/retry logic for API calls that fail\nlet maxRetries = 3;\nlet retryCount = $input.first().retryCount || 0;\n\nif (retryCount < maxRetries) {\n  // Simulate failure (in real implementation, would check for actual error)\n  const shouldRetry = false; // Set to true to test retry logic\n  \n  if (shouldRetry) {\n    // Increase retry count\n    return [{\n      ...$input.first(),\n      retryCount: retryCount + 1,\n      retryAfter: 5000 * Math.pow(2, retryCount) // Exponential backoff\n    }];\n  }\n}\n\n// If no retry needed or max retries reached\nreturn [$input.first()];"
       },
-      "id": "e976a0a6-4eae-4dba-a5af-c614d176cb6e",
+      "id": "0e510d9a-0fc2-4cd4-815e-e99bdbdf83ca",
       "name": "API Fallback Logic",
       "type": "n8n-nodes-base.code",
       "typeVersion": 1,
       "position": [
-        2940,
-        -15
+        5160,
+        200
       ]
     },
     {
       "parameters": {
         "jsCode": "// Add metadata for operational events\nconst data = $input.first();\nconst now = new Date().toISOString();\n\nreturn [{\n  timestamp: now,\n  operation: 'customer_message_processed',\n  source: data.source,\n  messageId: data.id || `msg_${Date.now()}`,\n  processingTime: data.processingTime || Math.floor(Math.random() * 2000),\n  intent: data.analysis?.intent || 'unknown',\n  sentiment: data.analysis?.sentiment || 'unknown',\n  severity: data.analysis?.severity || 0,\n  success: true\n}];"
       },
-      "id": "5ef8e586-89aa-4cf9-8b8f-0f83602e65cf",
+      "id": "bdfd0cb7-0b97-4ee0-87eb-10aa5aeb4734",
       "name": "Generate Operational Metrics",
       "type": "n8n-nodes-base.code",
       "typeVersion": 1,
       "position": [
-        3820,
-        845.5
+        5420,
+        240
       ]
     },
     {
@@ -596,13 +596,13 @@
         "url": "https://metrics.example.com/api/log",
         "options": {}
       },
-      "id": "c803dbcc-27e8-4d3b-84a9-30ad2710e432",
+      "id": "d67c746a-ad03-4c8d-a362-b417048e1091",
       "name": "Send Metrics",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 1,
       "position": [
-        4040,
-        845.5
+        5560,
+        -200
       ]
     },
     {
@@ -615,12 +615,25 @@
       "type": "n8n-nodes-base.whatsApp",
       "typeVersion": 1,
       "position": [
-        -140,
-        360
+        2420,
+        400
       ],
-      "id": "a38268fb-519f-4711-9872-d07a1231bdbd",
+      "id": "73ada8ef-0760-40cc-9680-d31717208859",
       "name": "WhatsApp Business Cloud1",
       "webhookId": "051d9d69-6b9c-456d-8bef-e205c45ed9bf"
+    },
+    {
+      "parameters": {
+        "content": "By: Mateus Yonathan"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        3320,
+        460
+      ],
+      "typeVersion": 1,
+      "id": "5a82a055-0e6d-4c77-b2a5-beddb2dcc9a9",
+      "name": "Sticky Note"
     }
   ],
   "pinData": {},
@@ -845,6 +858,25 @@
         [
           {
             "node": "Log to Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Route Response:telegram",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Route Response:whatsapp",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Route Response:api",
             "type": "main",
             "index": 0
           }
@@ -1120,10 +1152,10 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "4b2a6416-7d9b-4098-aaa5-dc951d11cfd6",
+  "versionId": "b4bda4a7-0d49-4e98-a28a-b3d2919a6855",
   "meta": {
     "instanceId": "be444951bac696b04d8731bda1288255e8a08ddbd7af0a4950f013b82e6131fa"
   },
-  "id": "IEYxXNgn5rgUkuNd",
+  "id": "BHd5GEMpeWwLU9dN",
   "tags": []
 }
